@@ -21,10 +21,6 @@ import java.util.concurrent.TimeUnit
  */
 class NetViewModel constructor(application: Application)  : AndroidViewModel(application) {
 
-    val certificatePinner = CertificatePinner.Builder()
-        .add("hostname","SHA1..........")
-        .build()
-
     val okHttpClient = OkHttpClient.Builder()
         .writeTimeout(5000, TimeUnit.MILLISECONDS)
         .readTimeout(5000, TimeUnit.MILLISECONDS)
@@ -37,7 +33,6 @@ class NetViewModel constructor(application: Application)  : AndroidViewModel(app
         .dispatcher(Dispatcher())
         .cookieJar(CookieJar.NO_COOKIES)
         .cache(Cache(application.cacheDir,10*1024*1024))
-        .certificatePinner(certificatePinner)
         .build()
 
     val header = Headers.Builder()
@@ -55,7 +50,7 @@ class NetViewModel constructor(application: Application)  : AndroidViewModel(app
 
     val request: Request = Request.Builder()
         .url("https://www.wanandroid.com/article/list/0/json")
-        .method("GET", RequestBodyWrapper.createDefaultBody())
+        .method("GET", null)
         .tag("")
         .headers(header)
         .cacheControl(CacheControl.FORCE_CACHE)
@@ -64,10 +59,20 @@ class NetViewModel constructor(application: Application)  : AndroidViewModel(app
 
     val call = okHttpClient.newCall(request)
 
+    /**************************************************************/
+
+    private val request1 :Request = Request.Builder()
+        .url("https://www.wanandroid.com/article/list/0/json")
+        .method("GET",null)
+        .build()
+
+    private val okhttpClient1:OkHttpClient = OkHttpClient.Builder()
+        .cache(Cache(application.cacheDir,10*1024*1024))
+        .build()
+
     fun getData(callback:OnHttpResultCallback) {
         viewModelScope.launch(Dispatchers.IO) {
-            call.execute()
-            call.enqueue(object :Callback{
+            okhttpClient1.newCall(request1).enqueue(object :Callback{
                 override fun onFailure(call: Call, e: IOException) {
                     callback.onFailed(e)
                 }
@@ -79,11 +84,5 @@ class NetViewModel constructor(application: Application)  : AndroidViewModel(app
             })
         }
     }
-
-
-    private suspend fun get(): Response = withContext(Dispatchers.IO) {
-        call.execute()
-    }
-
 
 }
