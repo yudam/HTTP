@@ -1,13 +1,10 @@
 package com.mdy.http
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mdy.http.request.RequestBodyWrapper
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.*
 import java.io.IOException
 import java.net.Proxy
@@ -64,6 +61,13 @@ class NetViewModel constructor(application: Application)  : AndroidViewModel(app
     private val request1 :Request = Request.Builder()
         .url("https://www.wanandroid.com/article/list/0/json")
         .method("GET",null)
+        .cacheControl(CacheControl.Builder().noCache().build())
+        .build()
+
+    private val request2 :Request = Request.Builder()
+        .url("https://www.wanandroid.com/article/list/0/json")
+        .method("GET",null)
+        .cacheControl(CacheControl.Builder().onlyIfCached().build())
         .build()
 
     private val okhttpClient1:OkHttpClient = OkHttpClient.Builder()
@@ -71,8 +75,26 @@ class NetViewModel constructor(application: Application)  : AndroidViewModel(app
         .build()
 
     fun getData(callback:OnHttpResultCallback) {
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
+            Log.i("MDY", "Thread-name-1："+Thread.currentThread().name)
             okhttpClient1.newCall(request1).enqueue(object :Callback{
+                override fun onFailure(call: Call, e: IOException) {
+                    callback.onFailed(e)
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    callback.onSuccess(response)
+                }
+
+            })
+        }
+    }
+
+
+    fun getData2(callback:OnHttpResultCallback) {
+        viewModelScope.launch {
+            Log.i("MDY", "Thread-name-1："+Thread.currentThread().name)
+            okhttpClient1.newCall(request2).enqueue(object :Callback{
                 override fun onFailure(call: Call, e: IOException) {
                     callback.onFailed(e)
                 }
